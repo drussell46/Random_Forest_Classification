@@ -1,0 +1,94 @@
+#import
+import arcpy
+import os
+import shutil
+from arcpy import env
+from arcpy.sa import *
+
+#set up parallel processing
+arcpy.env.parallelProcessingFactor = "100%"
+
+#set up environment
+arcpy.env.workspace = r"F:\workspace"
+
+#set up mask environment
+arcpy.env.mask = r"F:\ConUS_shp\ConUS_Dissolved.shp"
+# Define input and output paths
+input_shapefile = r"F:\Rarified_Pisatchios\CONUS_PIST\rarified_PistPoints_ALL.shp"
+output_trained_features = r"F:\workspace\RDF_OutputTables.gdb\RDF_Out_Trained_Features_A41"
+output_predicted = r"F:\workspace\RDF_OutputTables.gdb\RDF_Out_Predicted_A41"  
+
+# Set other parameters
+prediction_type = "TRAIN_AND_PREDICT"
+variable_predict = "grid_code"  # "Value" is the target variable
+treat_variable_as_categorical = True  
+explanatory_variables = [
+    [r"F:\CONUS_HistGCM\ConUS_HIST_1.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_2.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_3.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_4.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_5.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_6.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_7.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_8.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_9.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_10.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_11.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_12.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_13.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_14.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_15.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_16.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_17.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_18.tif\Band_1", "false"],
+    [r"F:\CONUS_HistGCM\ConUS_HIST_19.tif\Band_1", "false"]
+]
+features_to_predict = ""  # No specific features are to be predicted
+variable_of_importance = None  # No specific variable of importance
+explanatory_variable_matching = [
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_1", r"F:\CONUS_HistGCM\ConUS_HIST_1.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_2", r"F:\CONUS_HistGCM\ConUS_HIST_2.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_3", r"F:\CONUS_HistGCM\ConUS_HIST_3.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_4", r"F:\CONUS_HistGCM\ConUS_HIST_4.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_5", r"F:\CONUS_HistGCM\ConUS_HIST_5.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_6", r"F:\CONUS_HistGCM\ConUS_HIST_6.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_7", r"F:\CONUS_HistGCM\ConUS_HIST_7.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_8", r"F:\CONUS_HistGCM\ConUS_HIST_8.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_9", r"F:\CONUS_HistGCM\ConUS_HIST_9.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_10", r"F:\CONUS_HistGCM\ConUS_HIST_10.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_11", r"F:\CONUS_HistGCM\ConUS_HIST_11.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_12", r"F:\CONUS_HistGCM\ConUS_HIST_12.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_13", r"F:\CONUS_HistGCM\ConUS_HIST_13.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_14", r"F:\CONUS_HistGCM\ConUS_HIST_14.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_15", r"F:\CONUS_HistGCM\ConUS_HIST_15.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_16", r"F:\CONUS_HistGCM\ConUS_HIST_16.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_17", r"F:\CONUS_HistGCM\ConUS_HIST_17.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_18", r"F:\CONUS_HistGCM\ConUS_HIST_18.tif\Band_1"],
+    [r"F:\CONUS_204060\ConUS_ACCESS-CM2_ssp585_2041-2060\Band_19", r"F:\CONUS_HistGCM\ConUS_HIST_19.tif\Band_1"]
+]
+number_of_trees = 100  # Specify the number of trees to grow in the forest
+minimum_leaf_size = 10  # Specify the minimum size of leaf nodes
+maximum_tree_depth = 30  # Specify the maximum depth of the trees
+sample_size = None  # No specific sample size
+random_variables = None  # No specific variables for randomness
+percentage_for_validation = 40  # Specify the percentage of data for validation
+
+# Run forest analysis
+arcpy.gapro.Forest(
+    prediction_type=prediction_type,
+    in_features=input_shapefile,
+    output_trained_features=output_trained_features,
+    variable_predict=variable_predict,
+    treat_variable_as_categorical=treat_variable_as_categorical,
+    explanatory_variables=explanatory_variables,
+    features_to_predict=features_to_predict,
+    variable_of_importance=variable_of_importance,
+    output_predicted=output_predicted,
+    explanatory_variable_matching=explanatory_variable_matching,
+    number_of_trees=number_of_trees,
+    minimum_leaf_size=minimum_leaf_size,
+    maximum_tree_depth=maximum_tree_depth,
+    sample_size=sample_size,
+    random_variables=random_variables,
+    percentage_for_validation=percentage_for_validation
+)
