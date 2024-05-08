@@ -1,0 +1,1 @@
+This code was created to confirm the results obtained from the Presence Only Prediction. Similar inputs are utilized and similar results are obtained. This code stregthenes the understanding and validity of the Presence Only Prediction outputs.
